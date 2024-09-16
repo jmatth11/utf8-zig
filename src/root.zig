@@ -56,6 +56,21 @@ inline fn get_oct_type(point: u8) octet_type {
     if (oct_four_marker(point)) return octet_type.OCT_FOUR;
     return octet_type.OCT_INVALID;
 }
+inline fn gen_next_marker(point: u32) u8 {
+    return (point & 0b00111111) | 0b10000000;
+}
+inline fn gen_one_marker(point: u32) u8 {
+    return (point & 0b01111111);
+}
+inline fn gen_two_marker(point: u32) u8 {
+    return (point & 0b00011111) | 0b11000000;
+}
+inline fn gen_three_marker(point: u32) u8 {
+    return (point & 0b00001111) | 0b11100000;
+}
+inline fn gen_four_marker(point: u32) u8 {
+    return (point & 0b00000111) | 0b11110000;
+}
 
 /// Verify the next code point is valid.
 fn verify_octets(arr: [*:0]const u8, start_idx: usize, t: octet_type) bool {
@@ -71,6 +86,16 @@ fn verify_octets(arr: [*:0]const u8, start_idx: usize, t: octet_type) bool {
             oct_next_marker(arr[start_idx + 3])),
         else => false,
     };
+}
+
+/// Get the octet type from raw u32 value.
+/// Returns OCT_INVALID if outside of acceptable range.
+export fn octet_type_from_raw(n: u32) octet_type {
+    if (n <= 127) return octet_type.OCT_ONE;
+    if (n <= 2047) return octet_type.OCT_TWO;
+    if (n <= 65535) return octet_type.OCT_THREE;
+    if (n <= 1114111) return octet_type.OCT_FOUR;
+    return octet_type.OCT_INVALID;
 }
 
 /// Grab the next utf8 code point in the given string.
@@ -133,4 +158,54 @@ export fn utf8_len(arr: [*:0]const u8, len: usize) usize {
         code_point_len += 1;
     }
     return code_point_len;
+}
+
+/// Write a raw u32 unicode code point to the given destination buffer.
+/// Returns the number of bytes written, 0 for invalid code point or
+/// code point goes past the length of the destination buffer..
+export fn utf8_write_raw(dst: [*:0]u8, len: usize, start_idx: usize, point: u32) u8 {
+    const local_code_point: code_point = .{
+        .type = octet_type_from_raw(point),
+        .val = point,
+    };
+    return utf8_write(dst, len, start_idx, local_code_point);
+}
+
+/// Write a given unicode code point to the given destination buffer.
+/// Returns the number of bytes written, 0 for invalid code point or
+/// code point goes past the length of the destination buffer..
+export fn utf8_write(dst: [*:0]u8, len: usize, start_idx: usize, point: code_point) u8 {
+    if (start_idx >= len) return 0;
+    var result: u8 = 0;
+    switch (point.type) {
+        octet_type.OCT_ONE => {
+            result = 1;
+            dst[start_idx] = gen_one_marker(point.value);
+        },
+        octet_type.OCT_TWO => {
+            if ((start_idx + 1) >= len) return 0;
+            result = 2;
+            dst[start_idx] = gen_next_marker(point.value);
+            dst[start_idx + 1] = gen_two_marker(point.value >> 6);
+        },
+        octet_type.OCT_THREE => {
+            if ((start_idx + 2) >= len) return 0;
+            result = 3;
+            dst[start_idx] = gen_next_marker(point.value);
+            dst[start_idx + 1] = gen_next_marker(point.value >> 6);
+            dst[start_idx + 2] = gen_three_marker(point.value >> 12);
+        },
+        octet_type.OCT_FOUR => {
+            if ((start_idx + 3) >= len) return 0;
+            result = 4;
+            dst[start_idx] = gen_next_marker(point.value);
+            dst[start_idx + 1] = gen_next_marker(point.value >> 6);
+            dst[start_idx + 2] = gen_next_marker(point.value >> 12);
+            dst[start_idx + 3] = gen_four_marker(point.value >> 18);
+        },
+        else => {
+            return 0;
+        },
+    }
+    return result;
 }

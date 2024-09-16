@@ -77,3 +77,5 @@ test "utf8 length of string" {
     test_len = utf8.utf8_len(bad_format[0..2 :0], 2);
     try testing.expect(test_len == 0);
 }
+
+test "utf8 write code point to utf8" {}
