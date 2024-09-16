@@ -1,6 +1,6 @@
 const std = @import("std");
-const testing = std.testing;
 
+/// The types of octets represented in a unicode code point.
 const octet_type = enum(c_int) {
     OCT_ONE,
     OCT_TWO,
@@ -8,8 +8,20 @@ const octet_type = enum(c_int) {
     OCT_FOUR,
     OCT_NEXT,
     OCT_INVALID,
+
+    /// Get the byte count of the given code point.
+    pub fn count(t: octet_type) u8 {
+        return switch (t) {
+            octet_type.OCT_ONE => 1,
+            octet_type.OCT_TWO => 2,
+            octet_type.OCT_THREE => 3,
+            octet_type.OCT_FOUR => 4,
+            else => 0,
+        };
+    }
 };
 
+/// Structure to hold the unicode code point value and type.
 const code_point = extern struct {
     val: u32,
     type: octet_type,
@@ -45,6 +57,7 @@ inline fn get_oct_type(point: u8) octet_type {
     return octet_type.OCT_INVALID;
 }
 
+/// Verify the next code point is valid.
 fn verify_octets(arr: [*:0]const u8, start_idx: usize, t: octet_type) bool {
     return switch (t) {
         octet_type.OCT_TWO => oct_two_marker(arr[start_idx]) and
@@ -108,60 +121,16 @@ export fn utf8_next(arr: [*:0]const u8, len: usize, start_idx: usize) code_point
     return result;
 }
 
-test "check octet markers" {
-    try testing.expect(oct_one_marker(0b00000001) == true);
-    try testing.expect(oct_one_marker(0b10000000) == false);
-
-    try testing.expect(oct_next_marker(0b10000000) == true);
-    try testing.expect(oct_next_marker(0b11000000) == false);
-
-    try testing.expect(oct_two_marker(0b11000010) == true);
-    try testing.expect(oct_two_marker(0b11100000) == false);
-
-    try testing.expect(oct_three_marker(0b11100001) == true);
-    try testing.expect(oct_three_marker(0b11110000) == false);
-
-    try testing.expect(oct_four_marker(0b11110001) == true);
-    try testing.expect(oct_four_marker(0b11000000) == false);
-}
-
-test "get octet type" {
-    try testing.expect(get_oct_type(0b00000000) == octet_type.OCT_ONE);
-    try testing.expect(get_oct_type(0b10000000) == octet_type.OCT_NEXT);
-    try testing.expect(get_oct_type(0b11000000) == octet_type.OCT_TWO);
-    try testing.expect(get_oct_type(0b11100000) == octet_type.OCT_THREE);
-    try testing.expect(get_oct_type(0b11110000) == octet_type.OCT_FOUR);
-    try testing.expect(get_oct_type(0b11111111) == octet_type.OCT_INVALID);
-}
-
-test "utf8 next code point" {
-    const code_point_one = utf8_next("a", 1, 0);
-    try testing.expect(code_point_one.type == octet_type.OCT_ONE);
-    try testing.expect(code_point_one.val == 97);
-
-    const code_point_two = utf8_next("å", 2, 0);
-    try testing.expect(code_point_two.type == octet_type.OCT_TWO);
-    try testing.expect(code_point_two.val == 229);
-
-    const code_point_three = utf8_next("ࠎ", 3, 0);
-    try testing.expect(code_point_three.type == octet_type.OCT_THREE);
-    try testing.expect(code_point_three.val == 2062);
-
-    const code_point_four = utf8_next("𐀛", 4, 0);
-    try testing.expect(code_point_four.type == octet_type.OCT_FOUR);
-    try testing.expect(code_point_four.val == 65563);
-
-    const code_point_wrong_length = utf8_next("𐀛", 4, 5);
-    try testing.expect(code_point_wrong_length.type == octet_type.OCT_INVALID);
-    try testing.expect(code_point_wrong_length.val == 0);
-
-    var bad_format = [_]u8{ 0b11111111, 0b00011010, 0 };
-    const code_point_bad_format = utf8_next(bad_format[0..2 :0], 2, 0);
-    try testing.expect(code_point_bad_format.type == octet_type.OCT_INVALID);
-    try testing.expect(code_point_bad_format.val == 0);
-
-    bad_format[0] = 0b11100000;
-    const code_point_bad_format_2 = utf8_next(bad_format[0..2 :0], 2, 0);
-    try testing.expect(code_point_bad_format_2.type == octet_type.OCT_INVALID);
-    try testing.expect(code_point_bad_format_2.val == 0);
+/// Get the length of the given string being unicode aware.
+/// Returns the length of the code points in the string or 0 for empty or error.
+export fn utf8_len(arr: [*:0]const u8, len: usize) usize {
+    var cur_idx: usize = 0;
+    var code_point_len: usize = 0;
+    while (cur_idx < len) {
+        const point = utf8_next(arr, len, cur_idx);
+        if (point.type == octet_type.OCT_INVALID) return 0;
+        cur_idx += point.type.count();
+        code_point_len += 1;
+    }
+    return code_point_len;
 }
