@@ -91,7 +91,7 @@ fn verify_octets(arr: [*:0]const u8, start_idx: usize, t: octet_type) bool {
 
 /// Get the octet type from raw u32 value.
 /// Returns OCT_INVALID if outside of acceptable range.
-pub export fn octet_type_from_raw(n: u32) octet_type {
+export fn octet_type_from_raw(n: u32) octet_type {
     if (n <= 127) return octet_type.OCT_ONE;
     if (n <= 2047) return octet_type.OCT_TWO;
     if (n <= 65535) return octet_type.OCT_THREE;
