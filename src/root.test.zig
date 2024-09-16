@@ -3,30 +3,12 @@ const testing = std.testing;
 
 const utf8 = @import("root.zig");
 
-test "check octet markers" {
-    try testing.expect(utf8.oct_one_marker(0b00000001) == true);
-    try testing.expect(utf8.oct_one_marker(0b10000000) == false);
-
-    try testing.expect(utf8.oct_next_marker(0b10000000) == true);
-    try testing.expect(utf8.oct_next_marker(0b11000000) == false);
-
-    try testing.expect(utf8.oct_two_marker(0b11000010) == true);
-    try testing.expect(utf8.oct_two_marker(0b11100000) == false);
-
-    try testing.expect(utf8.oct_three_marker(0b11100001) == true);
-    try testing.expect(utf8.oct_three_marker(0b11110000) == false);
-
-    try testing.expect(utf8.oct_four_marker(0b11110001) == true);
-    try testing.expect(utf8.oct_four_marker(0b11000000) == false);
-}
-
-test "get octet type" {
-    try testing.expect(utf8.get_oct_type(0b00000000) == utf8.octet_type.OCT_ONE);
-    try testing.expect(utf8.get_oct_type(0b10000000) == utf8.octet_type.OCT_NEXT);
-    try testing.expect(utf8.get_oct_type(0b11000000) == utf8.octet_type.OCT_TWO);
-    try testing.expect(utf8.get_oct_type(0b11100000) == utf8.octet_type.OCT_THREE);
-    try testing.expect(utf8.get_oct_type(0b11110000) == utf8.octet_type.OCT_FOUR);
-    try testing.expect(utf8.get_oct_type(0b11111111) == utf8.octet_type.OCT_INVALID);
+test "octet_type from raw code point" {
+    try testing.expect(utf8.octet_type_from_raw(97) == utf8.octet_type.OCT_ONE);
+    try testing.expect(utf8.octet_type_from_raw(229) == utf8.octet_type.OCT_TWO);
+    try testing.expect(utf8.octet_type_from_raw(2062) == utf8.octet_type.OCT_THREE);
+    try testing.expect(utf8.octet_type_from_raw(65563) == utf8.octet_type.OCT_FOUR);
+    try testing.expect(utf8.octet_type_from_raw(1114112) == utf8.octet_type.OCT_INVALID);
 }
 
 test "utf8 next code point" {
@@ -78,4 +60,56 @@ test "utf8 length of string" {
     try testing.expect(test_len == 0);
 }
 
-test "utf8 write code point to utf8" {}
+test "utf8 write code point to utf8" {
+    const test_buffer: [*:0]u8 = @constCast(&[_:0]u8{ 0, 0, 0, 0, 0 });
+    const code_point_one_str: [*:0]const u8 = "a";
+    const code_point_one = utf8.utf8_next(code_point_one_str, 4, 0);
+    var bytes_written: u8 = utf8.utf8_write(test_buffer, 4, 0, code_point_one);
+    try testing.expect(bytes_written == 1);
+    try testing.expectEqualSlices(u8, code_point_one_str[0..1], test_buffer[0..1]);
+
+    const code_point_two_str: [*:0]const u8 = "å";
+    const code_point_two = utf8.utf8_next(code_point_two_str, 2, 0);
+    bytes_written = utf8.utf8_write(test_buffer, 4, 0, code_point_two);
+    try testing.expect(bytes_written == 2);
+    try testing.expectEqualSlices(u8, code_point_two_str[0..2], test_buffer[0..2]);
+
+    const code_point_three_str: [*:0]const u8 = "ࠎ";
+    const code_point_three = utf8.utf8_next(code_point_three_str, 3, 0);
+    bytes_written = utf8.utf8_write(test_buffer, 4, 0, code_point_three);
+    try testing.expect(bytes_written == 3);
+    try testing.expectEqualSlices(u8, code_point_three_str[0..3], test_buffer[0..3]);
+
+    const code_point_four_str: [*:0]const u8 = "𐀛";
+    const code_point_four = utf8.utf8_next(code_point_four_str, 4, 0);
+    bytes_written = utf8.utf8_write(test_buffer, 4, 0, code_point_four);
+    try testing.expect(bytes_written == 4);
+    try testing.expectEqualSlices(u8, code_point_four_str[0..4], test_buffer[0..4]);
+}
+
+test "utf8 write raw code point to utf8" {
+    const test_buffer: [*:0]u8 = @constCast(&[_:0]u8{ 0, 0, 0, 0, 0 });
+    const code_point_one_str: [*:0]const u8 = "a";
+    const code_point_one = 97;
+    var bytes_written: u8 = utf8.utf8_write_raw(test_buffer, 4, 0, code_point_one);
+    try testing.expect(bytes_written == 1);
+    try testing.expectEqualSlices(u8, code_point_one_str[0..1], test_buffer[0..1]);
+
+    const code_point_two_str: [*:0]const u8 = "å";
+    const code_point_two = 229;
+    bytes_written = utf8.utf8_write_raw(test_buffer, 4, 0, code_point_two);
+    try testing.expect(bytes_written == 2);
+    try testing.expectEqualSlices(u8, code_point_two_str[0..2], test_buffer[0..2]);
+
+    const code_point_three_str: [*:0]const u8 = "ࠎ";
+    const code_point_three = 2062;
+    bytes_written = utf8.utf8_write_raw(test_buffer, 4, 0, code_point_three);
+    try testing.expect(bytes_written == 3);
+    try testing.expectEqualSlices(u8, code_point_three_str[0..3], test_buffer[0..3]);
+
+    const code_point_four_str: [*:0]const u8 = "𐀛";
+    const code_point_four = 65563;
+    bytes_written = utf8.utf8_write_raw(test_buffer, 4, 0, code_point_four);
+    try testing.expect(bytes_written == 4);
+    try testing.expectEqualSlices(u8, code_point_four_str[0..4], test_buffer[0..4]);
+}
