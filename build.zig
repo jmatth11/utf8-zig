@@ -20,6 +20,7 @@ pub fn build(b: *std.Build) void {
         // In this case the main source file is merely a path, however, in more
         // complicated build scripts, this could be a generated file.
         .root_source_file = b.path("src/root.zig"),
+        .pic = true,
         .target = target,
         .optimize = optimize,
     });
@@ -28,9 +29,6 @@ pub fn build(b: *std.Build) void {
     // location when the user invokes the "install" step (the default step when
     // running `zig build`).
     b.installArtifact(lib);
-
-    // emit header files for C
-    _ = lib.getEmittedH();
 
     // Creates a step for unit testing. This only builds the test executable
     // but does not run it.
