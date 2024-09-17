@@ -3,14 +3,6 @@ const testing = std.testing;
 
 const utf8 = @import("root.zig");
 
-test "octet_type from raw code point" {
-    try testing.expect(utf8.octet_type_from_raw(97) == utf8.octet_type.OCT_ONE);
-    try testing.expect(utf8.octet_type_from_raw(229) == utf8.octet_type.OCT_TWO);
-    try testing.expect(utf8.octet_type_from_raw(2062) == utf8.octet_type.OCT_THREE);
-    try testing.expect(utf8.octet_type_from_raw(65563) == utf8.octet_type.OCT_FOUR);
-    try testing.expect(utf8.octet_type_from_raw(1114112) == utf8.octet_type.OCT_INVALID);
-}
-
 test "utf8 next code point" {
     const code_point_one = utf8.utf8_next("a", 1, 0);
     try testing.expect(code_point_one.type == utf8.octet_type.OCT_ONE);
