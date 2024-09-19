@@ -49,7 +49,8 @@ pub const unicode = struct {
     }
 
     pub fn write_at(self: *unicode, buf: []u8, idx: usize) unicode_error!usize {
-        if (!utf8.utf8_verify(buf, buf.len)) return unicode_error.invalid_format;
+        // TODO check if we need to push the next bytes to make room for this write
+        if (!utf8.utf8_verify_str(buf, buf.len)) return unicode_error.invalid_format;
         const write_len = idx + buf.len;
         self.resize(write_len) catch return unicode_error.alloc_error;
         var pos_idx = idx;
