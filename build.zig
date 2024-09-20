@@ -15,7 +15,8 @@ pub fn build(b: *std.Build) void {
     // set a preferred release mode, allowing the user to decide how to optimize.
     const optimize = b.standardOptimizeOption(.{});
 
-    const lib = b.addStaticLibrary(.{
+    // create zig lib
+    const ziglib = b.addStaticLibrary(.{
         .name = "utf8-zig",
         // In this case the main source file is merely a path, however, in more
         // complicated build scripts, this could be a generated file.
@@ -28,7 +29,24 @@ pub fn build(b: *std.Build) void {
     // This declares intent for the library to be installed into the standard
     // location when the user invokes the "install" step (the default step when
     // running `zig build`).
-    b.installArtifact(lib);
+    b.installArtifact(ziglib);
+
+    // create c-only lib
+    const clib = b.addStaticLibrary(.{
+        .name = "utf8-zig",
+        // In this case the main source file is merely a path, however, in more
+        // complicated build scripts, this could be a generated file.
+        .root_source_file = b.path("src/utf8.zig"),
+        .pic = true,
+        .target = target,
+        .optimize = optimize,
+    });
+    b.installArtifact(clib);
+
+    // This declares intent for the library to be installed into the standard
+    // location when the user invokes the "install" step (the default step when
+    // running `zig build`).
+    b.installArtifact(ziglib);
 
     // Creates a step for unit testing. This only builds the test executable
     // but does not run it.
