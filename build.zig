@@ -43,7 +43,6 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/utf8.test.zig"),
         .target = target,
         .optimize = optimize,
-        .error_tracing = true,
     });
 
     const run_public_func_lib_unit_tests = b.addRunArtifact(lib_public_func_unit_tests);

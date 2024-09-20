@@ -13,8 +13,8 @@ pub const unicode = struct {
     alloc: std.mem.Allocator,
 
     fn resize(self: *unicode, incoming_len: usize) unicode_error!void {
-        if ((self.pos + incoming_len) >= self.bytes.len) {
-            const result = self.alloc.resize(self.bytes, self.pos + incoming_len + 20);
+        if (incoming_len >= self.bytes.len) {
+            const result = self.alloc.resize(self.bytes, incoming_len + 20);
             if (!result) return unicode_error.alloc_error;
         }
     }
@@ -30,28 +30,52 @@ pub const unicode = struct {
         self.pos = 0;
     }
 
-    pub fn write(self: *unicode, buf: []u8) usize {
-        return try self.write_at(buf, self.pos);
+    pub fn len(self: *unicode) usize {
+        return self.bytes.len;
     }
 
-    pub fn write_raw(self: *unicode, point: u32) usize {
-        return try self.write_raw_at(point, self.pos);
+    pub fn at(self: *unicode, idx: usize) unicode_error!u32 {
+        const bytes_len = self.len();
+        if (idx > bytes_len) return unicode_error.out_of_range;
+        return self.bytes[idx];
     }
 
-    pub fn write_raw_at(self: *unicode, point: u32, idx: usize) unicode_error!usize {
+    pub fn write(comptime T: type, self: *unicode, buf: T) unicode_error!usize {
+        return switch (T) {
+            []u8 => try self.write_at(buf, self.pos),
+            u32 => try self.write_raw_at(buf, self.pos),
+        };
+    }
+
+    pub fn write_at(comptime T: type, self: *unicode, buf: T, idx: usize) unicode_error!usize {
+        return switch (T) {
+            []u8 => try self.write_at(buf, idx),
+            u32 => try self.write_raw_at(buf, idx),
+        };
+    }
+
+    pub fn insert_raw_at(self: *unicode, point: u32, idx: usize) unicode_error!usize {
         const octet_t = utf8.octet_type_from_raw(point);
         if (octet_t == utf8.octet_type.OCT_INVALID) return unicode_error.invalid_format;
-        const point_len = idx + octet_t.count();
-        try self.resize(point_len);
+        const point_end_idx = idx + octet_t.count();
+        try move_range(idx, point_end_idx);
+        if (idx < self.pos) {}
+    }
+
+    fn write_raw_at(self: *unicode, point: u32, idx: usize) unicode_error!usize {
+        const octet_t = utf8.octet_type_from_raw(point);
+        if (octet_t == utf8.octet_type.OCT_INVALID) return unicode_error.invalid_format;
+        const point_end_idx = idx + octet_t.count();
+        try self.resize(point_end_idx);
         self.bytes[idx] = point;
-        if (point_len > self.pos) self.pos = point_len;
+        if (point_end_idx > self.pos) self.pos = point_end_idx;
         return 1;
     }
 
-    pub fn write_at(self: *unicode, buf: []u8, idx: usize) unicode_error!usize {
-        // TODO check if we need to push the next bytes to make room for this write
+    fn write_at_code_points(self: *unicode, buf: []u8, idx: usize) unicode_error!usize {
+        // verify the string is valid up front
         if (!utf8.utf8_verify_str(buf, buf.len)) return unicode_error.invalid_format;
-        const write_len = idx + buf.len;
+        const write_len = idx + utf8.utf8_len(buf, buf.len);
         self.resize(write_len) catch return unicode_error.alloc_error;
         var pos_idx = idx;
         var buf_idx = 0;
@@ -65,13 +89,15 @@ pub const unicode = struct {
         return buf_idx;
     }
 
-    pub fn len(self: *unicode) usize {
-        return self.bytes.len;
-    }
-
-    pub fn at(self: *unicode, idx: usize) unicode_error!u32 {
-        const bytes_len = self.len();
-        if (idx > bytes_len) return unicode_error.out_of_range;
-        return self.bytes[idx];
+    fn move_range(self: *unicode, start_idx: usize, end_idx: usize) unicode_error!void {
+        if (end_idx < start_idx) return unicode_error.out_of_range;
+        var end_pos = (self.pos + (end_idx - start_idx)) - 1;
+        try self.resize(end_pos);
+        var beg_pos = self.pos - 1;
+        while (beg_pos >= start_idx) {
+            self.bytes[end_pos] = self.bytes[beg_pos];
+            end_pos -= 1;
+            beg_pos -= 1;
+        }
     }
 };
