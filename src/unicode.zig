@@ -8,7 +8,7 @@ pub const unicode_error = error{
     not_supported,
 };
 
-pub const unicode_raw = u32;
+pub const unicode_code_point = u32;
 pub const unicode_utf8 = []u8;
 
 pub const unicode = struct {
@@ -38,6 +38,10 @@ pub const unicode = struct {
         return self.bytes.len;
     }
 
+    pub fn utf8_len(self: *unicode) usize {
+        return utf8.code_point_to_utf8_len(self.bytes.ptr);
+    }
+
     pub fn at(self: *unicode, idx: usize) unicode_error!u32 {
         const bytes_len = self.len();
         if (idx > bytes_len) return unicode_error.out_of_range;
@@ -46,56 +50,60 @@ pub const unicode = struct {
 
     pub fn write(comptime T: type, self: *unicode, buf: T) unicode_error!usize {
         return switch (T) {
-            unicode_utf8 => try self.write_at(buf, self.pos),
-            unicode_raw => try self.write_raw_at(buf, self.pos),
+            unicode_utf8 => try self.write_utf8_at(buf, self.pos),
+            unicode_code_point => try self.write_code_point_at(buf, self.pos),
             else => unicode_error.not_supported,
         };
     }
 
     pub fn write_at(comptime T: type, self: *unicode, buf: T, idx: usize) unicode_error!usize {
         return switch (T) {
-            unicode_utf8 => try self.write_at(buf, idx),
-            unicode_raw => try self.write_raw_at(buf, idx),
+            unicode_utf8 => try self.write_utf8_at(buf, idx),
+            unicode_code_point => try self.write_code_point_at(buf, idx),
             else => unicode_error.not_supported,
         };
     }
 
     pub fn insert(comptime T: type, self: *unicode, buf: T) unicode_error!usize {
         return switch (T) {
-            unicode_utf8 => try self.insert_at_code_points(buf, self.pos),
-            unicode_raw => try self.insert_raw_at(buf, self.pos),
+            unicode_utf8 => try self.insert_at_utf8(buf, self.pos),
+            unicode_code_point => try self.insert_code_point_at(buf, self.pos),
             else => unicode_error.not_supported,
         };
     }
 
     pub fn insert_at(comptime T: type, self: *unicode, buf: T, idx: usize) unicode_error!usize {
         return switch (T) {
-            unicode_utf8 => try self.insert_at_code_points(buf, idx),
-            unicode_raw => try self.insert_raw_at(buf, idx),
+            unicode_utf8 => try self.insert_at_utf8(buf, idx),
+            unicode_code_point => try self.insert_code_point_at(buf, idx),
             else => unicode_error.not_supported,
         };
     }
+    // TODO implement:
+    // - generate []u8 from self
+    // - remove_range function
+    // - write/insert and array of code points
 
-    pub fn insert_raw_at(self: *unicode, point: u32, idx: usize) unicode_error!usize {
-        const octet_t = try self.validate_raw(point);
+    fn insert_code_point_at(self: *unicode, point: u32, idx: usize) unicode_error!usize {
+        const octet_t = try self.validate_code_point(point);
         const point_end_idx = idx + 1;
         try move_range(idx, point_end_idx);
         return try self.write_octet_type_at(octet_t, idx);
     }
 
-    pub fn insert_at_code_points(self: *unicode, buf: []u8, idx: usize) unicode_error!usize {
+    fn insert_at_utf8(self: *unicode, buf: []u8, idx: usize) unicode_error!usize {
         const buf_len = try self.validate_utf8_str(buf);
         const write_len = idx + buf_len;
         try self.move_range(idx, write_len);
         return self.write_utf8_at(buf, idx);
     }
 
-    fn write_raw_at(self: *unicode, point: u32, idx: usize) unicode_error!usize {
-        const octet_t = try self.validate_raw(point);
+    fn write_code_point_at(self: *unicode, point: u32, idx: usize) unicode_error!usize {
+        const octet_t = try self.validate_code_point(point);
         return self.write_octet_type_at(octet_t, idx);
     }
 
-    fn write_at_code_points(self: *unicode, buf: []u8, idx: usize) unicode_error!usize {
+    fn write_at_utf8(self: *unicode, buf: []u8, idx: usize) unicode_error!usize {
         // verify the string is valid up front
         const buf_len = try self.validate_utf8_str(buf);
         const write_len = idx + buf_len;
@@ -136,8 +144,8 @@ pub const unicode = struct {
             beg_pos -= 1;
         }
     }
-    inline fn validate_raw(n: u32) unicode_error!utf8.octet_type {
-        const octet_t = utf8.octet_type_from_raw(n);
+    inline fn validate_code_point(n: u32) unicode_error!utf8.octet_type {
+        const octet_t = utf8.octet_type_from_code_point(n);
         if (octet_t == utf8.octet_type.OCT_INVALID) return unicode_error.invalid_format;
         return octet_t;
     }
