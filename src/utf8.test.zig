@@ -89,20 +89,20 @@ test "utf8 write raw code point to utf8" {
     var init_buffer: [5]u8 = [_]u8{ 0, 0, 0, 0, 0 };
     const code_point_one_str: [*]const u8 = "a";
     const code_point_one = 97;
-    var bytes_written: u8 = utf8.utf8_write_raw(&init_buffer, 1, 0, code_point_one);
+    var bytes_written: u8 = utf8.utf8_write_code_point(&init_buffer, 1, 0, code_point_one);
     try testing.expect(bytes_written == 1);
     try testing.expect(code_point_one_str[0] == init_buffer[0]);
 
     const code_point_two_str: [*]const u8 = "å";
     const code_point_two = 229;
-    bytes_written = utf8.utf8_write_raw(&init_buffer, 2, 0, code_point_two);
+    bytes_written = utf8.utf8_write_code_point(&init_buffer, 2, 0, code_point_two);
     try testing.expect(bytes_written == 2);
     try testing.expect(code_point_two_str[0] == init_buffer[0]);
     try testing.expect(code_point_two_str[1] == init_buffer[1]);
 
     const code_point_three_str: [*]const u8 = "ࠎ";
     const code_point_three = 2062;
-    bytes_written = utf8.utf8_write_raw(&init_buffer, 3, 0, code_point_three);
+    bytes_written = utf8.utf8_write_code_point(&init_buffer, 3, 0, code_point_three);
     try testing.expect(bytes_written == 3);
     try testing.expect(code_point_three_str[0] == init_buffer[0]);
     try testing.expect(code_point_three_str[1] == init_buffer[1]);
@@ -110,7 +110,7 @@ test "utf8 write raw code point to utf8" {
 
     const code_point_four_str: [*]const u8 = "𐀛";
     const code_point_four = 65563;
-    bytes_written = utf8.utf8_write_raw(&init_buffer, 4, 0, code_point_four);
+    bytes_written = utf8.utf8_write_code_point(&init_buffer, 4, 0, code_point_four);
     try testing.expect(bytes_written == 4);
     try testing.expect(code_point_four_str[0] == init_buffer[0]);
     try testing.expect(code_point_four_str[1] == init_buffer[1]);

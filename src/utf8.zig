@@ -145,6 +145,15 @@ pub export fn utf8_verify_str(arr: [*]const u8, len: usize) bool {
     return true;
 }
 
+/// Verify a string of code points are valid.
+pub export fn code_point_verify_str(arr: [*]const u32, len: usize) bool {
+    var idx: usize = 0;
+    while (idx < len) : (idx += 1) {
+        if (!utf8_verify_raw_code_point(arr[idx])) return false;
+    }
+    return true;
+}
+
 /// Get the octet type from raw u32 value.
 /// Returns OCT_INVALID if outside of acceptable range.
 pub export fn octet_type_from_code_point(n: u32) octet_type {
@@ -232,7 +241,7 @@ pub export fn code_point_to_utf8_len(arr: [*]const u32, len: usize) usize {
 /// Write a raw u32 unicode code point to the given destination buffer.
 /// Returns the number of bytes written, 0 for invalid code point or
 /// code point goes past the length of the destination buffer..
-pub export fn utf8_write_raw(dst: [*]u8, len: usize, start_idx: usize, point: u32) u8 {
+pub export fn utf8_write_code_point(dst: [*]u8, len: usize, start_idx: usize, point: u32) u8 {
     const local_code_point: code_point = .{
         .type = octet_type_from_code_point(point),
         .val = point,
