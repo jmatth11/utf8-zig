@@ -119,11 +119,11 @@ test "utf8 write raw code point to utf8" {
 }
 
 test "verify code points" {
-    try testing.expect(utf8.utf8_verify_raw_code_point(97));
-    try testing.expect(utf8.utf8_verify_raw_code_point(229));
-    try testing.expect(utf8.utf8_verify_raw_code_point(2062));
-    try testing.expect(utf8.utf8_verify_raw_code_point(65563));
-    try testing.expect(utf8.utf8_verify_raw_code_point(1114112) == false);
+    try testing.expect(utf8.utf8_verify_code_point(97));
+    try testing.expect(utf8.utf8_verify_code_point(229));
+    try testing.expect(utf8.utf8_verify_code_point(2062));
+    try testing.expect(utf8.utf8_verify_code_point(65563));
+    try testing.expect(utf8.utf8_verify_code_point(1114112) == false);
 }
 
 test "verify utf8 string" {
