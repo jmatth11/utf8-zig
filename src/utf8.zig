@@ -28,6 +28,9 @@ pub const code_point = extern struct {
     type: octet_type,
 };
 
+/// Standard "replacement" character to use when a Unicode code point is not supported.
+pub export const replacement_character: u32 = 0xFFFD;
+
 /// Check if code point has ONE marker.
 inline fn oct_one_marker(point: u8) bool {
     return (point & 0b10000000) == 0;
