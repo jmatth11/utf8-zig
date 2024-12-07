@@ -1,7 +1,8 @@
 const std = @import("std");
+const testing = std.testing;
 
 /// The types of octets represented in a unicode code point.
-const octet_type = enum(c_int) {
+pub const octet_type = enum(c_int) {
     OCT_ONE,
     OCT_TWO,
     OCT_THREE,
@@ -22,7 +23,7 @@ const octet_type = enum(c_int) {
 };
 
 /// Structure to hold the unicode code point value and type.
-const code_point = extern struct {
+pub const code_point = extern struct {
     val: u32,
     type: octet_type,
 };
@@ -57,19 +58,19 @@ inline fn get_oct_type(point: u8) octet_type {
     return octet_type.OCT_INVALID;
 }
 inline fn gen_next_marker(point: u32) u8 {
-    return (point & 0b00111111) | 0b10000000;
+    return @intCast((point & 0b00111111) | 0b10000000);
 }
 inline fn gen_one_marker(point: u32) u8 {
-    return (point & 0b01111111);
+    return @intCast(point & 0b01111111);
 }
 inline fn gen_two_marker(point: u32) u8 {
-    return (point & 0b00011111) | 0b11000000;
+    return @intCast((point & 0b00011111) | 0b11000000);
 }
 inline fn gen_three_marker(point: u32) u8 {
-    return (point & 0b00001111) | 0b11100000;
+    return @intCast((point & 0b00001111) | 0b11100000);
 }
 inline fn gen_four_marker(point: u32) u8 {
-    return (point & 0b00000111) | 0b11110000;
+    return @intCast((point & 0b00000111) | 0b11110000);
 }
 
 /// Verify the next code point is valid.
@@ -90,7 +91,7 @@ fn verify_octets(arr: [*:0]const u8, start_idx: usize, t: octet_type) bool {
 
 /// Get the octet type from raw u32 value.
 /// Returns OCT_INVALID if outside of acceptable range.
-export fn octet_type_from_raw(n: u32) octet_type {
+pub export fn octet_type_from_raw(n: u32) octet_type {
     if (n <= 127) return octet_type.OCT_ONE;
     if (n <= 2047) return octet_type.OCT_TWO;
     if (n <= 65535) return octet_type.OCT_THREE;
@@ -99,7 +100,7 @@ export fn octet_type_from_raw(n: u32) octet_type {
 }
 
 /// Grab the next utf8 code point in the given string.
-export fn utf8_next(arr: [*:0]const u8, len: usize, start_idx: usize) code_point {
+pub export fn utf8_next(arr: [*:0]const u8, len: usize, start_idx: usize) code_point {
     const invalid_point: code_point = .{
         .type = octet_type.OCT_INVALID,
         .val = 0,
@@ -148,7 +149,7 @@ export fn utf8_next(arr: [*:0]const u8, len: usize, start_idx: usize) code_point
 
 /// Get the length of the given string being unicode aware.
 /// Returns the length of the code points in the string or 0 for empty or error.
-export fn utf8_len(arr: [*:0]const u8, len: usize) usize {
+pub export fn utf8_len(arr: [*:0]const u8, len: usize) usize {
     var cur_idx: usize = 0;
     var code_point_len: usize = 0;
     while (cur_idx < len) {
@@ -163,7 +164,7 @@ export fn utf8_len(arr: [*:0]const u8, len: usize) usize {
 /// Write a raw u32 unicode code point to the given destination buffer.
 /// Returns the number of bytes written, 0 for invalid code point or
 /// code point goes past the length of the destination buffer..
-export fn utf8_write_raw(dst: [*:0]u8, len: usize, start_idx: usize, point: u32) u8 {
+pub export fn utf8_write_raw(dst: [*:0]u8, len: usize, start_idx: usize, point: u32) u8 {
     const local_code_point: code_point = .{
         .type = octet_type_from_raw(point),
         .val = point,
@@ -174,38 +175,64 @@ export fn utf8_write_raw(dst: [*:0]u8, len: usize, start_idx: usize, point: u32)
 /// Write a given unicode code point to the given destination buffer.
 /// Returns the number of bytes written, 0 for invalid code point or
 /// code point goes past the length of the destination buffer..
-export fn utf8_write(dst: [*:0]u8, len: usize, start_idx: usize, point: code_point) u8 {
+pub export fn utf8_write(dst: [*:0]u8, len: usize, start_idx: usize, point: code_point) u8 {
     if (start_idx >= len) return 0;
     var result: u8 = 0;
     switch (point.type) {
         octet_type.OCT_ONE => {
             result = 1;
-            dst[start_idx] = gen_one_marker(point.value);
+            dst[start_idx] = gen_one_marker(point.val);
         },
         octet_type.OCT_TWO => {
             if ((start_idx + 1) >= len) return 0;
             result = 2;
-            dst[start_idx] = gen_next_marker(point.value);
-            dst[start_idx + 1] = gen_two_marker(point.value >> 6);
+            dst[start_idx + 1] = gen_next_marker(point.val);
+            dst[start_idx] = gen_two_marker(point.val >> 6);
         },
         octet_type.OCT_THREE => {
             if ((start_idx + 2) >= len) return 0;
             result = 3;
-            dst[start_idx] = gen_next_marker(point.value);
-            dst[start_idx + 1] = gen_next_marker(point.value >> 6);
-            dst[start_idx + 2] = gen_three_marker(point.value >> 12);
+            dst[start_idx + 2] = gen_next_marker(point.val);
+            dst[start_idx + 1] = gen_next_marker(point.val >> 6);
+            dst[start_idx] = gen_three_marker(point.val >> 12);
         },
         octet_type.OCT_FOUR => {
             if ((start_idx + 3) >= len) return 0;
             result = 4;
-            dst[start_idx] = gen_next_marker(point.value);
-            dst[start_idx + 1] = gen_next_marker(point.value >> 6);
-            dst[start_idx + 2] = gen_next_marker(point.value >> 12);
-            dst[start_idx + 3] = gen_four_marker(point.value >> 18);
+            dst[start_idx + 3] = gen_next_marker(point.val);
+            dst[start_idx + 2] = gen_next_marker(point.val >> 6);
+            dst[start_idx + 1] = gen_next_marker(point.val >> 12);
+            dst[start_idx] = gen_four_marker(point.val >> 18);
         },
         else => {
             return 0;
         },
     }
     return result;
+}
+
+test "check octet markers" {
+    try testing.expect(oct_one_marker(0b00000001) == true);
+    try testing.expect(oct_one_marker(0b10000000) == false);
+
+    try testing.expect(oct_next_marker(0b10000000) == true);
+    try testing.expect(oct_next_marker(0b11000000) == false);
+
+    try testing.expect(oct_two_marker(0b11000010) == true);
+    try testing.expect(oct_two_marker(0b11100000) == false);
+
+    try testing.expect(oct_three_marker(0b11100001) == true);
+    try testing.expect(oct_three_marker(0b11110000) == false);
+
+    try testing.expect(oct_four_marker(0b11110001) == true);
+    try testing.expect(oct_four_marker(0b11000000) == false);
+}
+
+test "get octet type" {
+    try testing.expect(get_oct_type(0b00000000) == octet_type.OCT_ONE);
+    try testing.expect(get_oct_type(0b10000000) == octet_type.OCT_NEXT);
+    try testing.expect(get_oct_type(0b11000000) == octet_type.OCT_TWO);
+    try testing.expect(get_oct_type(0b11100000) == octet_type.OCT_THREE);
+    try testing.expect(get_oct_type(0b11110000) == octet_type.OCT_FOUR);
+    try testing.expect(get_oct_type(0b11111111) == octet_type.OCT_INVALID);
 }
