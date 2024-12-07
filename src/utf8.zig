@@ -116,6 +116,11 @@ pub fn write(dst: []u8, start_idx: usize, point: code_point) u8 {
     return result;
 }
 
+/// Get the byte count for the given octet type.
+pub export fn octet_type_count(t: octet_type) u8 {
+    return t.count();
+}
+
 /// Get the octet type of the given utf8 value.
 pub export fn get_oct_type(point: u8) octet_type {
     if (oct_one_marker(point)) return octet_type.OCT_ONE;
@@ -126,7 +131,7 @@ pub export fn get_oct_type(point: u8) octet_type {
     return octet_type.OCT_INVALID;
 }
 /// Verify a given raw value is a valid unicode code point.
-pub export fn utf8_verify_raw_code_point(val: u32) bool {
+pub export fn utf8_verify_code_point(val: u32) bool {
     const oct_t = octet_type_from_code_point(val);
     return oct_t.count() != 0;
 }
@@ -149,7 +154,7 @@ pub export fn utf8_verify_str(arr: [*]const u8, len: usize) bool {
 pub export fn code_point_verify_str(arr: [*]const u32, len: usize) bool {
     var idx: usize = 0;
     while (idx < len) : (idx += 1) {
-        if (!utf8_verify_raw_code_point(arr[idx])) return false;
+        if (!utf8_verify_code_point(arr[idx])) return false;
     }
     return true;
 }

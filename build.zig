@@ -41,6 +41,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+    clib.bundle_compiler_rt = true;
     b.installArtifact(clib);
 
     // Creates a step for unit testing. This only builds the test executable
