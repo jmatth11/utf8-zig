@@ -155,7 +155,7 @@ test "utf8 next code point" {
     try testing.expect(code_point_wrong_length.type == octet_type.OCT_INVALID);
     try testing.expect(code_point_wrong_length.val == 0);
 
-    var bad_format = [_]u8{ 0b11111111, 0b00011010 };
+    var bad_format = [_]u8{ 0b11111111, 0b00011010, 0 };
     const code_point_bad_format = utf8_next(bad_format[0..2 :0], 2, 0);
     try testing.expect(code_point_bad_format.type == octet_type.OCT_INVALID);
     try testing.expect(code_point_bad_format.val == 0);
