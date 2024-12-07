@@ -127,7 +127,7 @@ pub export fn get_oct_type(point: u8) octet_type {
 }
 /// Verify a given raw value is a valid unicode code point.
 pub export fn utf8_verify_raw_code_point(val: u32) bool {
-    const oct_t = octet_type_from_raw(val);
+    const oct_t = octet_type_from_code_point(val);
     return oct_t.count() != 0;
 }
 
@@ -147,7 +147,7 @@ pub export fn utf8_verify_str(arr: [*]const u8, len: usize) bool {
 
 /// Get the octet type from raw u32 value.
 /// Returns OCT_INVALID if outside of acceptable range.
-pub export fn octet_type_from_raw(n: u32) octet_type {
+pub export fn octet_type_from_code_point(n: u32) octet_type {
     if (n <= 127) return octet_type.OCT_ONE;
     if (n <= 2047) return octet_type.OCT_TWO;
     if (n <= 65535) return octet_type.OCT_THREE;
@@ -217,12 +217,24 @@ pub export fn utf8_len(arr: [*]const u8, len: usize) usize {
     return code_point_len;
 }
 
+/// Calculate the utf8 string length from an array of code points.
+pub export fn code_point_to_utf8_len(arr: [*]const u32, len: usize) usize {
+    var idx: usize = 0;
+    var sum: usize = 0;
+    while (idx < len) : (idx += 1) {
+        const octet_t = octet_type_from_code_point(arr[idx]);
+        if (octet_t == octet_type.OCT_INVALID) return 0;
+        sum += octet_t.count();
+    }
+    return sum;
+}
+
 /// Write a raw u32 unicode code point to the given destination buffer.
 /// Returns the number of bytes written, 0 for invalid code point or
 /// code point goes past the length of the destination buffer..
 pub export fn utf8_write_raw(dst: [*]u8, len: usize, start_idx: usize, point: u32) u8 {
     const local_code_point: code_point = .{
-        .type = octet_type_from_raw(point),
+        .type = octet_type_from_code_point(point),
         .val = point,
     };
     return utf8_write(dst, len, start_idx, local_code_point);
@@ -264,9 +276,13 @@ test "get octet type" {
 }
 
 test "octet_type from raw code point" {
-    try testing.expect(octet_type_from_raw(97) == octet_type.OCT_ONE);
-    try testing.expect(octet_type_from_raw(229) == octet_type.OCT_TWO);
-    try testing.expect(octet_type_from_raw(2062) == octet_type.OCT_THREE);
-    try testing.expect(octet_type_from_raw(65563) == octet_type.OCT_FOUR);
-    try testing.expect(octet_type_from_raw(1114112) == octet_type.OCT_INVALID);
+    try testing.expect(octet_type_from_code_point(97) == octet_type.OCT_ONE);
+    try testing.expect(octet_type_from_code_point(229) == octet_type.OCT_TWO);
+    try testing.expect(octet_type_from_code_point(2062) == octet_type.OCT_THREE);
+    try testing.expect(octet_type_from_code_point(65563) == octet_type.OCT_FOUR);
+    try testing.expect(octet_type_from_code_point(1114112) == octet_type.OCT_INVALID);
+}
+
+test "code point to utf8 len" {
+    // TODO test
 }
