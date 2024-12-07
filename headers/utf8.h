@@ -22,6 +22,8 @@ struct code_point {
   enum octet_type type;
 };
 
+extern uint32_t replacement_character;
+
 extern uint8_t utf8_write(uint8_t *dst, size_t len, size_t start_idx, struct code_point point) __THROWNL __nonnull((1));
 extern uint8_t utf8_write_code_point(uint8_t *dst, size_t len, size_t start_idx, uint32_t point) __THROWNL __nonnull((1));
 extern size_t code_point_to_utf8_len(uint32_t *const arr, size_t len) __THROWNL __nonnull((1));
