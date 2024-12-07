@@ -33,6 +33,7 @@ extern bool utf8_verify_str(uint8_t *const arr, size_t len) __THROWNL __nonnull(
 extern bool utf8_verify_code_point(uint32_t val) __THROWNL;
 extern enum octet_type get_oct_type(uint8_t point) __THROWNL;
 extern uint8_t octet_type_count(enum octet_type t) __THROWNL;
+extern bool check_reserved_surrogates(uint32_t point) __THROWNL;
 
 __END_DECLS
 

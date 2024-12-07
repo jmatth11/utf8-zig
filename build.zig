@@ -34,13 +34,12 @@ pub fn build(b: *std.Build) void {
     // create c-only lib
     const clib = b.addStaticLibrary(.{
         .name = "utf8-zig",
-        // In this case the main source file is merely a path, however, in more
-        // complicated build scripts, this could be a generated file.
         .root_source_file = b.path("src/utf8.zig"),
         .pic = true,
         .target = target,
         .optimize = optimize,
     });
+    // bundle zig compiler runtime
     clib.bundle_compiler_rt = true;
     b.installArtifact(clib);
 

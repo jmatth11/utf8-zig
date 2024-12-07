@@ -64,6 +64,11 @@ inline fn gen_four_marker(point: u32) u8 {
     return @intCast((point & 0b00000111) | 0b11110000);
 }
 
+/// Check if a code point is in the UTF-16 reserved surrogate points.
+pub export fn check_reserved_surrogates(point: u32) bool {
+    return point >= 55296 and point <= 57343;
+}
+
 /// Verify the next code point is valid.
 fn verify_octets(arr: [*]const u8, start_idx: usize, t: octet_type) bool {
     return switch (t) {
@@ -80,6 +85,8 @@ fn verify_octets(arr: [*]const u8, start_idx: usize, t: octet_type) bool {
     };
 }
 
+/// Write a given Unicode code point to the dst array at the given starting point.
+/// Returns the number of bytes written.
 pub fn write(dst: []u8, start_idx: usize, point: code_point) u8 {
     if (start_idx >= dst.len) return 0;
     var result: u8 = 0;
