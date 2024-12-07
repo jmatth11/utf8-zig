@@ -90,7 +90,7 @@ fn verify_octets(arr: [*:0]const u8, start_idx: usize, t: octet_type) bool {
 }
 
 pub export fn utf8_verify(arr: [*:0]const u8, len: usize) bool {
-    var idx = 0;
+    var idx: usize = 0;
     while (idx < len) {
         const b = arr[idx];
         const oct_t = get_oct_type(b);

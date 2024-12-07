@@ -72,8 +72,8 @@ pub const unicode = struct {
     pub fn at(self: *unicode, idx: usize) unicode_error!u32 {
         const bytes_len = self.len();
         if (idx > bytes_len) return unicode_error.out_of_range;
-        var byte_idx = 0;
-        var count = 0;
+        var byte_idx: usize = 0;
+        var count: usize = 0;
         while (count < idx) : (count += 1) {
             const oct_t = utf8.get_oct_type(self.bytes[byte_idx]);
             byte_idx += oct_t.count();
