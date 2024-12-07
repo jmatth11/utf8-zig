@@ -30,23 +30,23 @@ pub const code_point = extern struct {
 
 /// Check if code point has ONE marker.
 inline fn oct_one_marker(point: u8) bool {
-    return ((point >> 7) & 1) == 0;
+    return (point & 0b10000000) == 0;
 }
 /// Check if code point has NEXT marker.
 inline fn oct_next_marker(point: u8) bool {
-    return ((point >> 6) & 0b11) == 0b10;
+    return (point & 0b11000000) == 0b10000000;
 }
 /// Check if code point has TWO marker.
 inline fn oct_two_marker(point: u8) bool {
-    return ((point >> 5) & 0b111) == 0b110;
+    return (point & 0b11100000) == 0b11000000;
 }
 /// Check if code point has THREE marker.
 inline fn oct_three_marker(point: u8) bool {
-    return ((point >> 4) & 0b1111) == 0b1110;
+    return (point & 0b11110000) == 0b11100000;
 }
 /// Check if code point has FOUR marker.
 inline fn oct_four_marker(point: u8) bool {
-    return ((point >> 3) & 0b11111) == 0b11110;
+    return (point & 0b11111000) == 0b11110000;
 }
 inline fn gen_next_marker(point: u32) u8 {
     return @intCast((point & 0b00111111) | 0b10000000);
