@@ -49,7 +49,7 @@ inline fn oct_four_marker(point: u8) bool {
     return ((point >> 3) & 0b11111) == 0b11110;
 }
 /// Get the octet type of the given code point.
-inline fn get_oct_type(point: u8) octet_type {
+pub inline fn get_oct_type(point: u8) octet_type {
     if (oct_one_marker(point)) return octet_type.OCT_ONE;
     if (oct_next_marker(point)) return octet_type.OCT_NEXT;
     if (oct_two_marker(point)) return octet_type.OCT_TWO;
@@ -89,9 +89,21 @@ fn verify_octets(arr: [*:0]const u8, start_idx: usize, t: octet_type) bool {
     };
 }
 
+pub export fn utf8_verify(arr: [*:0]const u8, len: usize) bool {
+    var idx = 0;
+    while (idx < len) {
+        const b = arr[idx];
+        const oct_t = get_oct_type(b);
+        if (oct_t.count() == 0) return false;
+        if (!verify_octets(arr, idx, oct_t)) return false;
+        idx += oct_t.count();
+    }
+    return true;
+}
+
 /// Get the octet type from raw u32 value.
 /// Returns OCT_INVALID if outside of acceptable range.
-export fn octet_type_from_raw(n: u32) octet_type {
+pub export fn octet_type_from_raw(n: u32) octet_type {
     if (n <= 127) return octet_type.OCT_ONE;
     if (n <= 2047) return octet_type.OCT_TWO;
     if (n <= 65535) return octet_type.OCT_THREE;
