@@ -236,3 +236,11 @@ test "get octet type" {
     try testing.expect(get_oct_type(0b11110000) == octet_type.OCT_FOUR);
     try testing.expect(get_oct_type(0b11111111) == octet_type.OCT_INVALID);
 }
+
+test "octet_type from raw code point" {
+    try testing.expect(octet_type_from_raw(97) == octet_type.OCT_ONE);
+    try testing.expect(octet_type_from_raw(229) == octet_type.OCT_TWO);
+    try testing.expect(octet_type_from_raw(2062) == octet_type.OCT_THREE);
+    try testing.expect(octet_type_from_raw(65563) == octet_type.OCT_FOUR);
+    try testing.expect(octet_type_from_raw(1114112) == octet_type.OCT_INVALID);
+}
