@@ -52,7 +52,7 @@ inline fn gen_next_marker(point: u32) u8 {
     return @intCast((point & 0b00111111) | 0b10000000);
 }
 inline fn gen_one_marker(point: u32) u8 {
-    return @intCast(point & 0b01111111);
+    return @intCast((point & 0b01111111));
 }
 inline fn gen_two_marker(point: u32) u8 {
     return @intCast((point & 0b00011111) | 0b11000000);
@@ -65,7 +65,7 @@ inline fn gen_four_marker(point: u32) u8 {
 }
 
 /// Verify the next code point is valid.
-fn verify_octets(arr: [*:0]const u8, start_idx: usize, t: octet_type) bool {
+fn verify_octets(arr: [*]const u8, start_idx: usize, t: octet_type) bool {
     return switch (t) {
         octet_type.OCT_TWO => oct_two_marker(arr[start_idx]) and
             oct_next_marker(arr[start_idx + 1]),
@@ -80,6 +80,42 @@ fn verify_octets(arr: [*:0]const u8, start_idx: usize, t: octet_type) bool {
     };
 }
 
+pub fn write(dst: []u8, start_idx: usize, point: code_point) u8 {
+    if (start_idx >= dst.len) return 0;
+    var result: u8 = 0;
+    switch (point.type) {
+        octet_type.OCT_ONE => {
+            result = 1;
+            dst[start_idx] = gen_one_marker(point.val);
+        },
+        octet_type.OCT_TWO => {
+            if ((start_idx + 1) >= dst.len) return 0;
+            result = 2;
+            dst[start_idx + 1] = gen_next_marker(point.val);
+            dst[start_idx] = gen_two_marker(point.val >> 6);
+        },
+        octet_type.OCT_THREE => {
+            if ((start_idx + 2) >= dst.len) return 0;
+            result = 3;
+            dst[start_idx + 2] = gen_next_marker(point.val);
+            dst[start_idx + 1] = gen_next_marker(point.val >> 6);
+            dst[start_idx] = gen_three_marker(point.val >> 12);
+        },
+        octet_type.OCT_FOUR => {
+            if ((start_idx + 3) >= dst.len) return 0;
+            result = 4;
+            dst[start_idx + 3] = gen_next_marker(point.val);
+            dst[start_idx + 2] = gen_next_marker(point.val >> 6);
+            dst[start_idx + 1] = gen_next_marker(point.val >> 12);
+            dst[start_idx] = gen_four_marker(point.val >> 18);
+        },
+        else => {
+            return 0;
+        },
+    }
+    return result;
+}
+
 /// Get the octet type of the given utf8 value.
 pub export fn get_oct_type(point: u8) octet_type {
     if (oct_one_marker(point)) return octet_type.OCT_ONE;
@@ -92,11 +128,11 @@ pub export fn get_oct_type(point: u8) octet_type {
 /// Verify a given raw value is a valid unicode code point.
 pub export fn utf8_verify_raw_code_point(val: u32) bool {
     const oct_t = octet_type_from_raw(val);
-    return oct_t.count() == 0;
+    return oct_t.count() != 0;
 }
 
 // Verify the next utf8 encoded code point is valid.
-pub export fn utf8_verify_str(arr: [*:0]const u8, len: usize) bool {
+pub export fn utf8_verify_str(arr: [*]const u8, len: usize) bool {
     var idx: usize = 0;
     while (idx < len) {
         const b = arr[idx];
@@ -120,7 +156,7 @@ pub export fn octet_type_from_raw(n: u32) octet_type {
 }
 
 /// Grab the next utf8 code point in the given string.
-pub export fn utf8_next(arr: [*:0]const u8, len: usize, start_idx: usize) code_point {
+pub export fn utf8_next(arr: [*]const u8, len: usize, start_idx: usize) code_point {
     const invalid_point: code_point = .{
         .type = octet_type.OCT_INVALID,
         .val = 0,
@@ -169,7 +205,7 @@ pub export fn utf8_next(arr: [*:0]const u8, len: usize, start_idx: usize) code_p
 
 /// Get the length of the given string being unicode aware.
 /// Returns the length of the code points in the string or 0 for empty or error.
-pub export fn utf8_len(arr: [*:0]const u8, len: usize) usize {
+pub export fn utf8_len(arr: [*]const u8, len: usize) usize {
     var cur_idx: usize = 0;
     var code_point_len: usize = 0;
     while (cur_idx < len) {
@@ -184,7 +220,7 @@ pub export fn utf8_len(arr: [*:0]const u8, len: usize) usize {
 /// Write a raw u32 unicode code point to the given destination buffer.
 /// Returns the number of bytes written, 0 for invalid code point or
 /// code point goes past the length of the destination buffer..
-pub export fn utf8_write_raw(dst: [*:0]u8, len: usize, start_idx: usize, point: u32) u8 {
+pub export fn utf8_write_raw(dst: [*]u8, len: usize, start_idx: usize, point: u32) u8 {
     const local_code_point: code_point = .{
         .type = octet_type_from_raw(point),
         .val = point,
@@ -195,40 +231,10 @@ pub export fn utf8_write_raw(dst: [*:0]u8, len: usize, start_idx: usize, point: 
 /// Write a given unicode code point to the given destination buffer.
 /// Returns the number of bytes written, 0 for invalid code point or
 /// code point goes past the length of the destination buffer..
-pub export fn utf8_write(dst: [*:0]u8, len: usize, start_idx: usize, point: code_point) u8 {
+pub export fn utf8_write(dst: [*]u8, len: usize, start_idx: usize, point: code_point) u8 {
     if (start_idx >= len) return 0;
-    var result: u8 = 0;
-    switch (point.type) {
-        octet_type.OCT_ONE => {
-            result = 1;
-            dst[start_idx] = gen_one_marker(point.val);
-        },
-        octet_type.OCT_TWO => {
-            if ((start_idx + 1) >= len) return 0;
-            result = 2;
-            dst[start_idx + 1] = gen_next_marker(point.val);
-            dst[start_idx] = gen_two_marker(point.val >> 6);
-        },
-        octet_type.OCT_THREE => {
-            if ((start_idx + 2) >= len) return 0;
-            result = 3;
-            dst[start_idx + 2] = gen_next_marker(point.val);
-            dst[start_idx + 1] = gen_next_marker(point.val >> 6);
-            dst[start_idx] = gen_three_marker(point.val >> 12);
-        },
-        octet_type.OCT_FOUR => {
-            if ((start_idx + 3) >= len) return 0;
-            result = 4;
-            dst[start_idx + 3] = gen_next_marker(point.val);
-            dst[start_idx + 2] = gen_next_marker(point.val >> 6);
-            dst[start_idx + 1] = gen_next_marker(point.val >> 12);
-            dst[start_idx] = gen_four_marker(point.val >> 18);
-        },
-        else => {
-            return 0;
-        },
-    }
-    return result;
+    const dst_slice: []u8 = dst[0..len];
+    return write(dst_slice, start_idx, point);
 }
 
 test "check octet markers" {

@@ -53,75 +53,82 @@ test "utf8 length of string" {
 }
 
 test "utf8 write code point to utf8" {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    const alloc = gpa.allocator();
-    const init_buffer = try alloc.alloc(u8, 5);
-    const test_buffer: [*:0]u8 = @ptrCast(init_buffer);
-    defer alloc.free(init_buffer);
+    var init_buffer: [5]u8 = [_]u8{ 0, 0, 0, 0, 0 };
     const code_point_one_str: [*:0]const u8 = "a";
     const code_point_one = utf8.utf8_next(code_point_one_str, 4, 0);
-    var bytes_written: u8 = utf8.utf8_write(test_buffer, 4, 0, code_point_one);
+    var bytes_written: u8 = utf8.utf8_write(&init_buffer, 4, 0, code_point_one);
     try testing.expect(bytes_written == 1);
-    try testing.expect(code_point_one_str[0] == test_buffer[0]);
+    try testing.expect(code_point_one_str[0] == init_buffer[0]);
 
     const code_point_two_str: [*:0]const u8 = "å";
     const code_point_two = utf8.utf8_next(code_point_two_str, 2, 0);
-    bytes_written = utf8.utf8_write(test_buffer, 4, 0, code_point_two);
+    bytes_written = utf8.utf8_write(&init_buffer, 4, 0, code_point_two);
     try testing.expect(bytes_written == 2);
-    try testing.expect(code_point_two_str[0] == test_buffer[0]);
-    try testing.expect(code_point_two_str[1] == test_buffer[1]);
+    try testing.expect(code_point_two_str[0] == init_buffer[0]);
+    try testing.expect(code_point_two_str[1] == init_buffer[1]);
 
     const code_point_three_str: [*:0]const u8 = "ࠎ";
     const code_point_three = utf8.utf8_next(code_point_three_str, 3, 0);
-    bytes_written = utf8.utf8_write(test_buffer, 4, 0, code_point_three);
+    bytes_written = utf8.utf8_write(&init_buffer, 4, 0, code_point_three);
     try testing.expect(bytes_written == 3);
-    try testing.expect(code_point_three_str[0] == test_buffer[0]);
-    try testing.expect(code_point_three_str[1] == test_buffer[1]);
-    try testing.expect(code_point_three_str[2] == test_buffer[2]);
+    try testing.expect(code_point_three_str[0] == init_buffer[0]);
+    try testing.expect(code_point_three_str[1] == init_buffer[1]);
+    try testing.expect(code_point_three_str[2] == init_buffer[2]);
 
     const code_point_four_str: [*:0]const u8 = "𐀛";
     const code_point_four = utf8.utf8_next(code_point_four_str, 4, 0);
-    bytes_written = utf8.utf8_write(test_buffer, 4, 0, code_point_four);
+    bytes_written = utf8.utf8_write(&init_buffer, 4, 0, code_point_four);
     try testing.expect(bytes_written == 4);
-    try testing.expect(code_point_four_str[0] == test_buffer[0]);
-    try testing.expect(code_point_four_str[1] == test_buffer[1]);
-    try testing.expect(code_point_four_str[2] == test_buffer[2]);
-    try testing.expect(code_point_four_str[3] == test_buffer[3]);
+    try testing.expect(code_point_four_str[0] == init_buffer[0]);
+    try testing.expect(code_point_four_str[1] == init_buffer[1]);
+    try testing.expect(code_point_four_str[2] == init_buffer[2]);
+    try testing.expect(code_point_four_str[3] == init_buffer[3]);
 }
 
 test "utf8 write raw code point to utf8" {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    const alloc = gpa.allocator();
-    const init_buffer = try alloc.alloc(u8, 5);
-    const test_buffer: [*:0]u8 = @ptrCast(init_buffer);
-    defer alloc.free(init_buffer);
-    const code_point_one_str: [*:0]const u8 = "a";
+    var init_buffer: [5]u8 = [_]u8{ 0, 0, 0, 0, 0 };
+    const code_point_one_str: [*]const u8 = "a";
     const code_point_one = 97;
-    var bytes_written: u8 = utf8.utf8_write_raw(test_buffer, 4, 0, code_point_one);
+    var bytes_written: u8 = utf8.utf8_write_raw(&init_buffer, 1, 0, code_point_one);
     try testing.expect(bytes_written == 1);
-    try testing.expect(code_point_one_str[0] == test_buffer[0]);
+    try testing.expect(code_point_one_str[0] == init_buffer[0]);
 
-    const code_point_two_str: [*:0]const u8 = "å";
+    const code_point_two_str: [*]const u8 = "å";
     const code_point_two = 229;
-    bytes_written = utf8.utf8_write_raw(test_buffer, 4, 0, code_point_two);
+    bytes_written = utf8.utf8_write_raw(&init_buffer, 2, 0, code_point_two);
     try testing.expect(bytes_written == 2);
-    try testing.expect(code_point_two_str[0] == test_buffer[0]);
-    try testing.expect(code_point_two_str[1] == test_buffer[1]);
+    try testing.expect(code_point_two_str[0] == init_buffer[0]);
+    try testing.expect(code_point_two_str[1] == init_buffer[1]);
 
-    const code_point_three_str: [*:0]const u8 = "ࠎ";
+    const code_point_three_str: [*]const u8 = "ࠎ";
     const code_point_three = 2062;
-    bytes_written = utf8.utf8_write_raw(test_buffer, 4, 0, code_point_three);
+    bytes_written = utf8.utf8_write_raw(&init_buffer, 3, 0, code_point_three);
     try testing.expect(bytes_written == 3);
-    try testing.expect(code_point_three_str[0] == test_buffer[0]);
-    try testing.expect(code_point_three_str[1] == test_buffer[1]);
-    try testing.expect(code_point_three_str[2] == test_buffer[2]);
+    try testing.expect(code_point_three_str[0] == init_buffer[0]);
+    try testing.expect(code_point_three_str[1] == init_buffer[1]);
+    try testing.expect(code_point_three_str[2] == init_buffer[2]);
 
-    const code_point_four_str: [*:0]const u8 = "𐀛";
+    const code_point_four_str: [*]const u8 = "𐀛";
     const code_point_four = 65563;
-    bytes_written = utf8.utf8_write_raw(test_buffer, 4, 0, code_point_four);
+    bytes_written = utf8.utf8_write_raw(&init_buffer, 4, 0, code_point_four);
     try testing.expect(bytes_written == 4);
-    try testing.expect(code_point_four_str[0] == test_buffer[0]);
-    try testing.expect(code_point_four_str[1] == test_buffer[1]);
-    try testing.expect(code_point_four_str[2] == test_buffer[2]);
-    try testing.expect(code_point_four_str[3] == test_buffer[3]);
+    try testing.expect(code_point_four_str[0] == init_buffer[0]);
+    try testing.expect(code_point_four_str[1] == init_buffer[1]);
+    try testing.expect(code_point_four_str[2] == init_buffer[2]);
+    try testing.expect(code_point_four_str[3] == init_buffer[3]);
+}
+
+test "verify code points" {
+    try testing.expect(utf8.utf8_verify_raw_code_point(97));
+    try testing.expect(utf8.utf8_verify_raw_code_point(229));
+    try testing.expect(utf8.utf8_verify_raw_code_point(2062));
+    try testing.expect(utf8.utf8_verify_raw_code_point(65563));
+    try testing.expect(utf8.utf8_verify_raw_code_point(1114112) == false);
+}
+
+test "verify utf8 string" {
+    const valid_str: [*:0]const u8 = "Обсуждение";
+    try testing.expect(utf8.utf8_verify_str(valid_str, 10));
+    const invalid_str: [*:0]const u8 = "\xff\xaa";
+    try testing.expect(utf8.utf8_verify_str(invalid_str, 2) == false);
 }
