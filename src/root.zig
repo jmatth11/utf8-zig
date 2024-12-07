@@ -45,6 +45,21 @@ inline fn get_oct_type(point: u8) octet_type {
     return octet_type.OCT_INVALID;
 }
 
+fn verify_octets(arr: [*:0]const u8, start_idx: usize, t: octet_type) bool {
+    return switch (t) {
+        octet_type.OCT_TWO => oct_two_marker(arr[start_idx]) and
+            oct_next_marker(arr[start_idx + 1]),
+        octet_type.OCT_THREE => (oct_three_marker(arr[start_idx]) and
+            oct_next_marker(arr[start_idx + 1]) and
+            oct_next_marker(arr[start_idx + 2])),
+        octet_type.OCT_FOUR => (oct_four_marker(arr[start_idx]) and
+            oct_next_marker(arr[start_idx + 1]) and
+            oct_next_marker(arr[start_idx + 2]) and
+            oct_next_marker(arr[start_idx + 3])),
+        else => false,
+    };
+}
+
 /// Grab the next utf8 code point in the given string.
 export fn utf8_next(arr: [*:0]const u8, len: usize, start_idx: usize) code_point {
     const invalid_point: code_point = .{
@@ -67,12 +82,14 @@ export fn utf8_next(arr: [*:0]const u8, len: usize, start_idx: usize) code_point
         },
         octet_type.OCT_TWO => {
             if ((start_idx + 1) >= len) return invalid_point;
+            if (!verify_octets(arr, start_idx, octet_type.OCT_TWO)) return invalid_point;
             const n1: u32 = arr[start_idx] & 0b11111;
             const n2: u32 = arr[start_idx + 1] & 0b111111;
             result.val = (n1 << 6) | n2;
         },
         octet_type.OCT_THREE => {
             if ((start_idx + 2) >= len) return invalid_point;
+            if (!verify_octets(arr, start_idx, octet_type.OCT_THREE)) return invalid_point;
             const n1: u32 = arr[start_idx] & 0b1111;
             const n2: u32 = arr[start_idx + 1] & 0b111111;
             const n3: u32 = arr[start_idx + 2] & 0b111111;
@@ -80,6 +97,7 @@ export fn utf8_next(arr: [*:0]const u8, len: usize, start_idx: usize) code_point
         },
         octet_type.OCT_FOUR => {
             if ((start_idx + 3) >= len) return invalid_point;
+            if (!verify_octets(arr, start_idx, octet_type.OCT_FOUR)) return invalid_point;
             const n1: u32 = arr[start_idx] & 0b111;
             const n2: u32 = arr[start_idx + 1] & 0b111111;
             const n3: u32 = arr[start_idx + 2] & 0b111111;
@@ -132,4 +150,18 @@ test "utf8 next code point" {
     const code_point_four = utf8_next("𐀛", 4, 0);
     try testing.expect(code_point_four.type == octet_type.OCT_FOUR);
     try testing.expect(code_point_four.val == 65563);
+
+    const code_point_wrong_length = utf8_next("𐀛", 4, 5);
+    try testing.expect(code_point_wrong_length.type == octet_type.OCT_INVALID);
+    try testing.expect(code_point_wrong_length.val == 0);
+
+    var bad_format = [_]u8{ 0b11111111, 0b00011010 };
+    const code_point_bad_format = utf8_next(bad_format[0..2 :0], 2, 0);
+    try testing.expect(code_point_bad_format.type == octet_type.OCT_INVALID);
+    try testing.expect(code_point_bad_format.val == 0);
+
+    bad_format[0] = 0b11100000;
+    const code_point_bad_format_2 = utf8_next(bad_format[0..2 :0], 2, 0);
+    try testing.expect(code_point_bad_format_2.type == octet_type.OCT_INVALID);
+    try testing.expect(code_point_bad_format_2.val == 0);
 }
