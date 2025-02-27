@@ -4,9 +4,16 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <stdint.h>
+#ifndef EMSCRIPTEN
 #include <sys/cdefs.h>
+#else
+#define __THROWNL __attribute__((__nothrow__))
+#define __nonnull(params) __attribute__((__nonnull__ params))
+#endif
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 enum octet_type {
   OCT_ONE,
@@ -37,6 +44,8 @@ extern enum octet_type get_oct_type(uint8_t point) __THROWNL;
 extern uint8_t octet_type_count(enum octet_type t) __THROWNL;
 extern bool check_reserved_surrogates(uint32_t point) __THROWNL;
 
-__END_DECLS
+#ifdef __cplusplus
+}
+#endif
 
 #endif
