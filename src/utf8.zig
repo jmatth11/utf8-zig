@@ -140,13 +140,14 @@ pub export fn get_oct_type(point: u8) octet_type {
     if (oct_four_marker(point)) return octet_type.OCT_FOUR;
     return octet_type.OCT_INVALID;
 }
+
 /// Verify a given raw value is a valid unicode code point.
 pub export fn utf8_verify_code_point(val: u32) bool {
     const oct_t = octet_type_from_code_point(val);
     return oct_t.count() != 0;
 }
 
-// Verify the next utf8 encoded code point is valid.
+/// Verify the next utf8 encoded code point is valid.
 pub export fn utf8_verify_str(arr: [*]const u8, len: usize) bool {
     var idx: usize = 0;
     while (idx < len) {
@@ -255,7 +256,7 @@ pub export fn code_point_to_utf8_len(arr: [*]const u32, len: usize) usize {
 
 /// Write a raw u32 unicode code point to the given destination buffer.
 /// Returns the number of bytes written, 0 for invalid code point or
-/// code point goes past the length of the destination buffer..
+/// code point goes past the length of the destination buffer.
 pub export fn utf8_write_code_point(dst: [*]u8, len: usize, start_idx: usize, point: u32) u8 {
     const local_code_point: code_point = .{
         .type = octet_type_from_code_point(point),
@@ -266,7 +267,7 @@ pub export fn utf8_write_code_point(dst: [*]u8, len: usize, start_idx: usize, po
 
 /// Write a given unicode code point to the given destination buffer.
 /// Returns the number of bytes written, 0 for invalid code point or
-/// code point goes past the length of the destination buffer..
+/// code point goes past the length of the destination buffer.
 pub export fn utf8_write(dst: [*]u8, len: usize, start_idx: usize, point: code_point) u8 {
     if (start_idx >= len) return 0;
     const dst_slice: []u8 = dst[0..len];
