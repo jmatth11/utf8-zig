@@ -57,18 +57,18 @@ extern uint8_t utf8_write_code_point(uint8_t *dst, size_t len, size_t start_idx,
 /**
  * Calculate the utf8 string length from an array of code points.
  */
-extern size_t code_point_to_utf8_len(uint32_t *const arr, size_t len) __THROWNL __nonnull((1));
+extern size_t code_point_to_utf8_len(const uint32_t *arr, size_t len) __THROWNL __nonnull((1));
 
 /**
  * Get the length of the given string being unicode aware.
  * Returns the length of the code points in the string or 0 for empty or error.
  */
-extern size_t utf8_len(uint8_t *const arr, size_t len) __THROWNL __nonnull((1));
+extern size_t utf8_len(const uint8_t *arr, size_t len) __THROWNL __nonnull((1));
 
 /**
  * Grab the next utf8 code point in the given string.
  */
-extern struct code_point utf8_next(uint8_t *const arr, size_t len, size_t start_idx) __THROWNL __nonnull((1));
+extern struct code_point utf8_next(const uint8_t *arr, size_t len, size_t start_idx) __THROWNL __nonnull((1));
 
 /**
  * Get the octet type from raw u32 value.
@@ -79,12 +79,12 @@ extern enum octet_type octet_type_from_code_point(uint32_t n) __THROWNL;
 /**
  * Verify a string of code points are valid.
  */
-extern bool code_point_verify_str(uint32_t *const arr, size_t len) __THROWNL __nonnull((1));
+extern bool code_point_verify_str(const uint32_t *arr, size_t len) __THROWNL __nonnull((1));
 
 /**
  * Verify the next utf8 encoded code point is valid.
  */
-extern bool utf8_verify_str(uint8_t *const arr, size_t len) __THROWNL __nonnull((1));
+extern bool utf8_verify_str(const uint8_t *arr, size_t len) __THROWNL __nonnull((1));
 
 /**
  * Verify a given raw value is a valid unicode code point.
