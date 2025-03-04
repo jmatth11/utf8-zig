@@ -75,6 +75,7 @@ pub export fn check_reserved_surrogates(point: u32) bool {
 /// Verify the next code point is valid.
 fn verify_octets(arr: [*]const u8, start_idx: usize, t: octet_type) bool {
     return switch (t) {
+        octet_type.OCT_ONE => oct_one_marker(arr[start_idx]),
         octet_type.OCT_TWO => oct_two_marker(arr[start_idx]) and
             oct_next_marker(arr[start_idx + 1]),
         octet_type.OCT_THREE => (oct_three_marker(arr[start_idx]) and
