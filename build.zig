@@ -15,15 +15,24 @@ pub fn build(b: *std.Build) void {
     // set a preferred release mode, allowing the user to decide how to optimize.
     const optimize = b.standardOptimizeOption(.{});
 
-    // create zig lib
-    const ziglib = b.addStaticLibrary(.{
-        .name = "unicode-zig",
-        // In this case the main source file is merely a path, however, in more
-        // complicated build scripts, this could be a generated file.
-        .root_source_file = b.path("src/unicode.zig"),
+    const linkage = b.option(std.builtin.LinkMode, "linkage", "Link mode for utf8-zig library") orelse .static;
+    const unicodeMod = b.addModule("utf8zig", .{
+        .root_source_file = b.path("src/utf8.zig"),
         .pic = true,
         .target = target,
         .optimize = optimize,
+    });
+    const utf8Mod = b.addModule("utf8zig", .{
+        .root_source_file = b.path("src/utf8.zig"),
+        .pic = true,
+        .target = target,
+        .optimize = optimize,
+    });
+    // create zig lib
+    const ziglib = b.addLibrary(.{
+        .name = "unicode-zig",
+        .root_module = unicodeMod,
+        .linkage = linkage,
     });
 
     // This declares intent for the library to be installed into the standard
@@ -32,12 +41,10 @@ pub fn build(b: *std.Build) void {
     b.installArtifact(ziglib);
 
     // create c-only lib
-    const clib = b.addStaticLibrary(.{
-        .name = "utf8-zig",
-        .root_source_file = b.path("src/utf8.zig"),
-        .pic = true,
-        .target = target,
-        .optimize = optimize,
+    const clib = b.addLibrary(.{
+        .name = "utf8zig",
+        .root_module = utf8Mod,
+        .linkage = linkage,
     });
     // bundle zig compiler runtime
     clib.bundle_compiler_rt = true;
