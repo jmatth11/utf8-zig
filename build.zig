@@ -22,7 +22,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-    const utf8Mod = b.addModule("utf8zig", .{
+    const utf8Mod = b.addModule("utf8-zig", .{
         .root_source_file = b.path("src/utf8.zig"),
         .pic = true,
         .target = target,
@@ -42,7 +42,7 @@ pub fn build(b: *std.Build) void {
 
     // create c-only lib
     const clib = b.addLibrary(.{
-        .name = "utf8zig",
+        .name = "utf8-zig",
         .root_module = utf8Mod,
         .linkage = linkage,
     });
