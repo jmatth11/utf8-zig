@@ -17,7 +17,7 @@ pub fn build(b: *std.Build) void {
 
     const linkage = b.option(std.builtin.LinkMode, "linkage", "Link mode for utf8-zig library") orelse .static;
     const unicodeMod = b.addModule("utf8zig", .{
-        .root_source_file = b.path("src/utf8.zig"),
+        .root_source_file = b.path("src/unicode.zig"),
         .pic = true,
         .target = target,
         .optimize = optimize,
@@ -33,6 +33,7 @@ pub fn build(b: *std.Build) void {
         .name = "unicode-zig",
         .root_module = unicodeMod,
         .linkage = linkage,
+        .use_llvm = true,
     });
 
     // This declares intent for the library to be installed into the standard
