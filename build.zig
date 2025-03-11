@@ -33,7 +33,6 @@ pub fn build(b: *std.Build) void {
         .name = "unicode-zig",
         .root_module = unicodeMod,
         .linkage = linkage,
-        .use_llvm = true,
     });
 
     // This declares intent for the library to be installed into the standard
