@@ -16,7 +16,7 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     const linkage = b.option(std.builtin.LinkMode, "linkage", "Link mode for utf8-zig library") orelse .static;
-    const unicodeMod = b.addModule("utf8zig", .{
+    const unicodeMod = b.addModule("utf8-zig", .{
         .root_source_file = b.path("src/unicode.zig"),
         .pic = true,
         .target = target,
@@ -49,6 +49,21 @@ pub fn build(b: *std.Build) void {
     // bundle zig compiler runtime
     clib.bundle_compiler_rt = true;
     b.installArtifact(clib);
+
+    const webMod = b.addModule("webutf8-zig", .{
+        .root_source_file = b.path("src/unicode.zig"),
+        .pic = true,
+        .target = b.resolveTargetQuery(.{ .cpu_arch = .wasm32, .os_tag = .freestanding }),
+        .optimize = optimize,
+    });
+    const weblib = b.addLibrary(.{
+        .name = "webutf8-zig",
+        .root_module = webMod,
+        .linkage = linkage,
+    });
+    // bundle zig compiler runtime
+    weblib.bundle_compiler_rt = true;
+    b.installArtifact(weblib);
 
     // Creates a step for unit testing. This only builds the test executable
     // but does not run it.
