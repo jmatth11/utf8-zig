@@ -51,7 +51,7 @@ pub fn build(b: *std.Build) void {
     b.installArtifact(clib);
 
     const webMod = b.addModule("webutf8-zig", .{
-        .root_source_file = b.path("src/unicode.zig"),
+        .root_source_file = b.path("src/utf8.zig"),
         .pic = true,
         .target = b.resolveTargetQuery(.{ .cpu_arch = .wasm32, .os_tag = .freestanding }),
         .optimize = optimize,
@@ -60,6 +60,7 @@ pub fn build(b: *std.Build) void {
         .name = "webutf8-zig",
         .root_module = webMod,
         .linkage = linkage,
+        .use_llvm = true,
     });
     // bundle zig compiler runtime
     weblib.bundle_compiler_rt = true;
