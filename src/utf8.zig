@@ -276,7 +276,7 @@ pub export fn utf8_write(dst: [*]u8, len: usize, start_idx: usize, point: code_p
 }
 
 /// Check if codepoint is a whitespace character.
-pub export fn utf8_is_whitespace(point: code_point) bool {
+pub export fn utf8_is_whitespace(point: u32) bool {
     return switch (point) {
         0x0009, 0x000A, 0x000B, 0x000C, 0x000D, 0x0020,
         0x0085, 0x00A0, 0x1680, 0x2000, 0x2001, 0x2002,
