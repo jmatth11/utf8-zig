@@ -1,6 +1,6 @@
 .PHONY: all
 all:
-	zig build --Doptimize=ReleaseFast
+	zig build -Doptimize=ReleaseFast
 
 .PHONY: test
 test:
