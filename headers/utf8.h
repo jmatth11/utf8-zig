@@ -106,6 +106,11 @@ extern uint8_t octet_type_count(enum octet_type t) __THROWNL;
  */
 extern bool check_reserved_surrogates(uint32_t point) __THROWNL;
 
+/**
+ * Check if a code point is a whitespace character.
+ */
+extern bool utf8_is_whitespace(uint32_t point) __THROWNL;
+
 #ifdef __cplusplus
 }
 #endif

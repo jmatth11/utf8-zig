@@ -275,6 +275,18 @@ pub export fn utf8_write(dst: [*]u8, len: usize, start_idx: usize, point: code_p
     return write(dst_slice, start_idx, point);
 }
 
+/// Check if codepoint is a whitespace character.
+pub export fn utf8_is_whitespace(point: code_point) bool {
+    return switch (point) {
+        0x0009, 0x000A, 0x000B, 0x000C, 0x000D, 0x0020,
+        0x0085, 0x00A0, 0x1680, 0x2000, 0x2001, 0x2002,
+        0x2003, 0x2004, 0x2005, 0x2006, 0x2007, 0x2008,
+        0x2009, 0x200A, 0x2028, 0x2029, 0x202F, 0x205F,
+        0x3000 => true,
+        else => false,
+    };
+}
+
 test "check octet markers" {
     try testing.expect(oct_one_marker(0b00000001) == true);
     try testing.expect(oct_one_marker(0b10000000) == false);
